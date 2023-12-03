@@ -4,7 +4,7 @@ const { getDogsHandler, getDogsByNameHandler, getDogsByIdHandler, postDogHandler
 const dogsRouter = Router();
 
 dogsRouter.get ("/",getDogsHandler);
-dogsRouter.get ("/nombre",getDogsByNameHandler);
+dogsRouter.get ("/name",getDogsByNameHandler);
 dogsRouter.get ("/:id",getDogsByIdHandler);
 dogsRouter.post ("/",postDogHandler);
   

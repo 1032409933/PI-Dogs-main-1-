@@ -1,5 +1,6 @@
 const { default: axios } = require("axios");
 const { Dog } = require ("../db");
+const Sequelize = require('sequelize');
 
 const API = "https://api.thedogapi.com/v1/breeds?"
 const APIKEY = "live_lX1K3Z3KikQmWD6thfx9nTXY9dbS82WOWTxxChqDerwFygq23JCkNsKtR1mE9cAx"
@@ -8,44 +9,44 @@ const completa = "https://api.thedogapi.com/v1/breeds?api_key=live_lX1K3Z3KikQmW
 const cleanArray = (arr) => 
     arr.map ((elem)=>{
         return {
-            ID:elem.id,
-            Imagen:elem.image.url,
-            Nombre:elem.name,
-            Altura:elem.height.imperial,
-            Peso:elem.weight.imperial,
-            Años_de_vida:elem.life_span,
+            id:elem.id,
+            imagen:elem.image.url,
+            nombre:elem.name,
+            altura:elem.height.imperial,
+            peso:elem.weight.imperial,
+            añosdevida:elem.life_span,
             Temperamentos:elem.temperament,
-            Created:false,
+            created:false,
         };
     });
 
     const cleanArrayOne = (arr) => {
         return {
-            ID:arr.id,
-            Imagen:arr.image.url,
-            Nombre:arr.name,
-            Altura:arr.height.imperial,
-            Peso:arr.weight.imperial,
-            Años_de_vida:arr.life_span,
-            Created:false,
+            id:arr.id,
+            imagen:arr.image.url,
+            nombre:arr.name,
+            altura:arr.height.imperial,
+            peso:arr.weight.imperial,
+            añosdevida:arr.life_span,
+            created:false,
         };
     }
       
+const createDog = async (imagen, nombre, altura, peso, añosdevida )=> 
+    await Dog.create ({imagen, nombre, altura, peso, añosdevida });
 
-
-
-
-const createDog = async (nombre, altura, peso )=> 
-    await Dog.create ({nombre, altura, peso });
-
-const getDogByID = async (idRaza, source) => {
-    const dog = source === "api" 
-    ? (await axios.get("https://api.thedogapi.com/v1/breeds?api_key=live_lX1K3Z3KikQmWD6thfx9nTXY9dbS82WOWTxxChqDerwFygq23JCkNsKtR1mE9cAx"))
-    .data.find (dogRaza => dogRaza.id==idRaza)
-    : await Dog.findByPk (idRaza);
-
-    return cleanArrayOne(dog);
-}
+    const getDogByID = async (id, source) => {
+        let dog;
+        if (source === "api") {
+          const response = await axios.get("https://api.thedogapi.com/v1/breeds?api_key=live_lX1K3Z3KikQmWD6thfx9nTXY9dbS82WOWTxxChqDerwFygq23JCkNsKtR1mE9cAx");
+          const dogApi = response.data.find(dogRaza => dogRaza.id == id);
+          dog = cleanArrayOne(dogApi, { imagen: 'image.url' });
+        } else {
+          dog = await Dog.findByPk(id);
+        }
+      
+        return dog;
+      };
 
 const getAllDogs = async () => {
 
@@ -60,17 +61,24 @@ const getAllDogs = async () => {
     return results;
 }
 
-const getDogsByName = async (name) => {
-    
+const getDogsByName = async (nombre) => {
+    const dogsNameApi = (
+        await axios.get("https://api.thedogapi.com/v1/breeds?api_key=live_lX1K3Z3KikQmWD6thfx9nTXY9dbS82WOWTxxChqDerwFygq23JCkNsKtR1mE9cAx")
+    ).data.filter((dog) => dog.name.toLowerCase().includes(nombre.toLowerCase()));
 
-    const dogsNameApi = (await axios.get("https://api.thedogapi.com/v1/breeds?api_key=live_lX1K3Z3KikQmWD6thfx9nTXY9dbS82WOWTxxChqDerwFygq23JCkNsKtR1mE9cAx"))
-    .data.filter(dog => dog.name.toLowerCase().includes(name.toLowerCase()));
+    const dogsNameBdd = await Dog.findAll({ 
+        where: { 
+            nombre: { 
+                [Sequelize.Op.iLike]: `%${nombre}%` 
+            } 
+        } 
+    });
 
-    const dogsNameBdd = await Dog.findAll({ where: { nombre: name } });
+    // Mapear y limpiar los resultados de ambas fuentes
+    const cleanedResults = dogsNameApi.map(cleanArrayOne).concat(dogsNameBdd);
 
-    return [dogsNameApi, ...dogsNameBdd] 
-}
-
+    return cleanedResults;
+};
 
 
 module.exports = {createDog, getDogByID, getAllDogs, getDogsByName};

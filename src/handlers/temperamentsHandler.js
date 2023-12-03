@@ -1,5 +1,12 @@
-const temperamentsHandler =(req,res)=>{
-    res.status(200).send("estos son todos los temperamentos")
-}
+const {getAllTemperaments} = require ("../controllers/temperamentsControllers")
 
-module.exports = temperamentsHandler;
+const temperamentsHandler = async (req,res) =>{
+  try {
+    const allTemperaments = await getAllTemperaments ()
+        res.status(201).json(allTemperaments);
+    } catch (error){
+        res.status(400).json({error:error.message});
+    };
+  };
+
+  module.exports = temperamentsHandler;
